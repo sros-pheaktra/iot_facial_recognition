@@ -11,8 +11,9 @@ class Database:
 
         self.conn = sqlite3.connect("database/users.db")
         self.cursor = self.conn.cursor()
-
+    
         self.create_table()
+        self.create_attendance_table()
 
 
     def create_table(self):
@@ -31,8 +32,83 @@ class Database:
         """)
 
         self.conn.commit()
+    def create_attendance_table(self):
 
+        self.cursor.execute("""
+        CREATE TABLE IF NOT EXISTS attendance (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            student_id TEXT NOT NULL,
+            major TEXT NOT NULL,
+            role TEXT NOT NULL,
+            confidence REAL,
+            status TEXT DEFAULT 'Present',
+            detected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
+            FOREIGN KEY(user_id)
+                REFERENCES users(id)
+        )
+        """)
+
+        self.conn.commit()
+    def insert_attendance(
+        self,
+        user_id,
+        name,
+        student_id,
+        major,
+        role,
+        confidence
+    ):
+
+        self.cursor.execute("""
+        INSERT INTO attendance
+        (
+            user_id,
+            name,
+            student_id,
+            major,
+            role,
+            confidence
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            user_id,
+            name,
+            student_id,
+            major,
+            role,
+            confidence
+        ))
+
+        self.conn.commit()
+    def get_attendance(self):
+
+        self.cursor.execute("""
+        SELECT *
+        FROM attendance
+        ORDER BY detected_at DESC
+        """)
+
+        return self.cursor.fetchall()
+    def get_user_by_name(self, name):
+
+        self.cursor.execute("""
+        SELECT
+            id,
+            name,
+            student_id,
+            major,
+            role
+        FROM users
+        WHERE name = ?
+        """,
+        (name,)
+        )
+
+        return self.cursor.fetchone()
     def insert_user(
         self,
         name,
